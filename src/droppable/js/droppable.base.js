@@ -32,7 +32,7 @@ gj.droppable.methods = {
         var $dropEl = this;
 
         gj.widget.prototype.init.call(this, jsConfig, 'droppable');
-        $dragEl.attr('data-droppable', 'true');
+        $dropEl.attr('data-droppable', 'true');
         
         gj.documentManager.subscribeForEvent('mousedown', $dropEl.data('guid'), gj.droppable.methods.createMouseDownHandler($dropEl));
         gj.documentManager.subscribeForEvent('mousemove', $dropEl.data('guid'), gj.droppable.methods.createMouseMoveHandler($dropEl));
@@ -245,14 +245,16 @@ gj.droppable.widget.constructor = gj.droppable.widget;
 (function ($) {
     $.fn.droppable = function (method) {
         var $widget;
-        if (typeof method === 'object' || !method) {
-            return new gj.droppable.widget(this, arguments);
-        } else {
-            $widget = new gj.droppable.widget(this, null);
-            if ($widget[method]) {
-                return $widget[method].apply(this, Array.prototype.slice.call(arguments, 1));
+        if (this && this.length) {
+            if (typeof method === 'object' || !method) {
+                return new gj.droppable.widget(this, arguments);
             } else {
-                throw 'Method ' + method + ' does not exist.';
+                $widget = new gj.droppable.widget(this, null);
+                if ($widget[method]) {
+                    return $widget[method].apply(this, Array.prototype.slice.call(arguments, 1));
+                } else {
+                    throw 'Method ' + method + ' does not exist.';
+                }
             }
         }
     };

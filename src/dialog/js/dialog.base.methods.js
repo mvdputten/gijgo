@@ -20,7 +20,7 @@
 
     initialize: function ($dialog) {
         var data = $dialog.data(),
-            $body, $header;
+            $header, $body;
 
         $dialog.addClass(data.style.content);
 
@@ -213,12 +213,15 @@
     },
 
     open: function ($dialog) {
-        if (!$dialog.is(':visible')) {
-            gj.dialog.events.opening($dialog);
-            $dialog.css('display', 'block');
-            $dialog.closest('div[data-role="modal"]').css('display', 'block');
-            gj.dialog.events.opened($dialog);
+        var $footer;
+        gj.dialog.events.opening($dialog);
+        $dialog.css('display', 'block');
+        $dialog.closest('div[data-role="modal"]').css('display', 'block');
+        $footer = $dialog.children('div[data-role="footer"]');
+        if ($footer.length && $footer.outerHeight()) {
+            $dialog.children('div[data-role="body"]').css('margin-bottom', $footer.outerHeight());
         }
+        gj.dialog.events.opened($dialog);
         return $dialog;
     },
 

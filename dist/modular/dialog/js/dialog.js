@@ -278,8 +278,10 @@ gj.dialog.config = {
          *     <div data-role="header"><h4 data-role="title">Dialog</h4></div>
          *     <div data-role="body">Lorem ipsum dolor sit amet, consectetur adipiscing elit...</div>
          *     <div data-role="footer">
-         *         <button onclick="dialog.close()" class="mdl-button">Ok</button>
-         *         <button onclick="dialog.close()" class="mdl-button">Cancel</button>
+         *         <div class="mdl-dialog__actions">
+         *             <button onclick="dialog.close()" class="mdl-button">Ok</button>
+         *             <button onclick="dialog.close()" class="mdl-button">Cancel</button>
+         *         </div>
          *     </div>
          * </div>
          * <script>
@@ -498,11 +500,23 @@ gj.dialog.config = {
          *         uiLibrary: 'bootstrap'
          *     });
          * </script>
-         * @example Material.Design <!-- draggable.base, dialog.base, materialdesign -->
-         * <div id="dialog">Lorem ipsum dolor sit amet, consectetur adipiscing elit...</div>
+         * @example Material.Design <!-- materialdesign, draggable.base, dialog.base  -->
+         * <div id="dialog">
+         *   <div data-role="body">
+         *     Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+         *     Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+         *   </div>
+         *   <div data-role="footer">
+         *     <div class="mdl-dialog__actions">
+         *       <button class="mdl-button" onclick="dialog.close()">OK</button>
+         *       <button class="mdl-button" data-role="close">Cancel</button>
+         *     </div>
+         *   </div>
+         * </div>
          * <script>
-         *     $("#dialog").dialog({
-         *         uiLibrary: 'materialdesign'
+         *     var dialog = $("#dialog").dialog({
+         *         uiLibrary: 'materialdesign',
+         *         resizable: true
          *     });
          * </script>
          */
@@ -563,7 +577,7 @@ gj.dialog.config = {
             headerTitle: 'mdl-dialog__title gj-dialog-unselectable',
             headerCloseButton: 'gj-dialog-mdl-close',
             body: 'mdl-dialog__content',
-            footer: 'mdl-dialog__actions'
+            footer: 'gj-dialog-footer'
         }
     }
 };
@@ -867,7 +881,7 @@ gj.dialog.methods = {
 
     initialize: function ($dialog) {
         var data = $dialog.data(),
-            $body, $header;
+            $header, $body;
 
         $dialog.addClass(data.style.content);
 
@@ -1060,12 +1074,15 @@ gj.dialog.methods = {
     },
 
     open: function ($dialog) {
-        if (!$dialog.is(':visible')) {
-            gj.dialog.events.opening($dialog);
-            $dialog.css('display', 'block');
-            $dialog.closest('div[data-role="modal"]').css('display', 'block');
-            gj.dialog.events.opened($dialog);
+        var $footer;
+        gj.dialog.events.opening($dialog);
+        $dialog.css('display', 'block');
+        $dialog.closest('div[data-role="modal"]').css('display', 'block');
+        $footer = $dialog.children('div[data-role="footer"]');
+        if ($footer.length && $footer.outerHeight()) {
+            $dialog.children('div[data-role="body"]').css('margin-bottom', $footer.outerHeight());
         }
+        gj.dialog.events.opened($dialog);
         return $dialog;
     },
 
@@ -1158,15 +1175,17 @@ gj.dialog.widget.prototype.getHTMLConfig = gj.dialog.methods.getHTMLConfig;
 
 (function ($) {
     $.fn.dialog = function (method) {
-        var $widget;
-        if (typeof method === 'object' || !method) {
-            return new gj.dialog.widget(this, arguments);
-        } else {
-            $widget = new gj.dialog.widget(this, null);
-            if ($widget[method]) {
-                return $widget[method].apply(this, Array.prototype.slice.call(arguments, 1));
+        var $widget;        
+        if (this && this.length) {
+            if (typeof method === 'object' || !method) {
+                return new gj.dialog.widget(this, arguments);
             } else {
-                throw 'Method ' + method + ' does not exist.';
+                $widget = new gj.dialog.widget(this, null);
+                if ($widget[method]) {
+                    return $widget[method].apply(this, Array.prototype.slice.call(arguments, 1));
+                } else {
+                    throw 'Method ' + method + ' does not exist.';
+                }
             }
         }
     };
