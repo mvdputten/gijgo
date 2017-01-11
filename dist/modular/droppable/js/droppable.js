@@ -1,8 +1,8 @@
 /*
- * Gijgo Droppable v1.1.0
+ * Gijgo Droppable v1.2.0
  * http://gijgo.com/droppable
  *
- * Copyright 2014, 2016 gijgo.com
+ * Copyright 2014, 2017 gijgo.com
  * Released under the MIT license
  */
 if (typeof (gj) === 'undefined') {

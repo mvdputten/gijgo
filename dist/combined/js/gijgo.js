@@ -1,8 +1,8 @@
 /*
- * Gijgo JavaScript Library v1.1.0
+ * Gijgo JavaScript Library v1.2.0
  * http://gijgo.com/
  *
- * Copyright 2014, 2016 gijgo.com
+ * Copyright 2014, 2017 gijgo.com
  * Released under the MIT license
  */
 if (typeof (gj) === 'undefined') {
@@ -526,7 +526,7 @@ gj.dialog.config = {
             modal: 'gj-modal',
             content: 'gj-content',
             header: 'gj-header',
-            headerTitle: 'gj-title',
+            headerTitle: 'gj-title gj-unselectable',
             headerCloseButton: 'gj-close',
             body: 'gj-body',
             footer: 'gj-dialog-footer gj-footer'
@@ -562,7 +562,7 @@ gj.dialog.config = {
             modal: 'reveal-modal-bg',
             content: 'reveal-modal gj-dialog-fd-content',
             header: '',
-            headerTitle: 'gj-dialog-fd-title gj-dialog-unselectable',
+            headerTitle: 'gj-dialog-fd-title gj-unselectable',
             headerCloseButton: 'close-reveal-modal right gj-dialog-fd-close',
             body: 'gj-dialog-fd-body',
             footer: 'gj-dialog-footer gj-dialog-fd-footer'
@@ -574,7 +574,7 @@ gj.dialog.config = {
             modal: 'gj-modal',
             content: 'mdl-dialog gj-dialog-mdl-content',
             header: '',
-            headerTitle: 'mdl-dialog__title gj-dialog-unselectable',
+            headerTitle: 'mdl-dialog__title gj-unselectable',
             headerCloseButton: 'gj-dialog-mdl-close',
             body: 'mdl-dialog__content',
             footer: 'gj-dialog-footer'
@@ -982,11 +982,11 @@ gj.dialog.methods = {
         $dialog.draggable({
             handle: $header,
             start: function () {
-                $dialog.addClass('gj-dialog-unselectable');
+                $dialog.addClass('gj-unselectable');
                 gj.dialog.events.dragStart($dialog);
             },
             stop: function () {
-                $dialog.removeClass('gj-dialog-unselectable');
+                $dialog.removeClass('gj-unselectable');
                 gj.dialog.events.dragStop($dialog);
             }
         });
@@ -996,11 +996,12 @@ gj.dialog.methods = {
         var config = {
             'drag': gj.dialog.methods.resize,
             'start': function () {
-                $dialog.addClass('gj-dialog-unselectable');
+                $dialog.addClass('gj-unselectable');
                 gj.dialog.events.resizeStart($dialog);
             },
             'stop': function () {
-                $dialog.removeClass('gj-dialog-unselectable');
+                this.removeAttribute('style');
+                $dialog.removeClass('gj-unselectable');
                 gj.dialog.events.resizeStop($dialog);
             }
         };
@@ -3076,7 +3077,7 @@ gj.grid.methods = {
             $grid.prepend($thead);
         }
 
-        $row = $('<tr/>');
+        $row = $('<tr data-role="caption" />');
         for (i = 0; i < columns.length; i += 1) {
             $cell = $('<th data-field="' + (columns[i].field || '') + '" />');
             if (columns[i].width) {
@@ -5017,7 +5018,11 @@ gj.grid.plugins.inlineEditing.private = {
                     });
                 }
             }
-            gj.grid.plugins.inlineEditing.private.setCaretAtEnd($editorField[0]);
+            if ($editorField.prop('tagName').toUpperCase() === "INPUT" && $editorField.prop('type').toUpperCase() === 'TEXT') {
+                gj.grid.plugins.inlineEditing.private.setCaretAtEnd($editorField[0]);
+            } else {
+                $editorField.focus();
+            }
             $cell.attr('data-mode', 'edit');
         }
     },
@@ -5721,7 +5726,7 @@ gj.grid.plugins.pagination = {
                     data.params[data.defaultParams.limit] = data.pager.limit;
                 }
 
-                $row = $('<tr/>');
+                $row = $('<tr data-role="pager"/>');
                 $cell = $('<th/>').addClass(data.style.pager.cell);
                 $row.append($cell);
 
@@ -5896,7 +5901,7 @@ gj.grid.plugins.pagination = {
         },
 
         updatePagerColSpan: function ($grid) {
-            var $cell = $grid.find('tfoot > tr > th');
+            var $cell = $grid.find('tfoot > tr[data-role="pager"] > th');
             if ($cell && $cell.length) {
                 $cell.attr('colspan', gj.grid.methods.countVisibleColumns($grid));
             }
@@ -6469,12 +6474,22 @@ gj.grid.plugins.resizableColumns = {
             /** If set to true, users can resize columns by dragging the edges (resize handles) of their header cells.
              * @type boolean
              * @default false
-             * @example sample <!-- grid.base, draggable.base, grid.resizableColumns -->
+             * @example Base.Theme <!-- grid.base, draggable.base -->
              * <table id="grid"></table>
              * <script>
              *     var grid = $('#grid').grid({
              *         dataSource: '/DataSources/GetPlayers',
              *         resizableColumns: true,
+             *         columns: [ { field: 'ID', width: 34 }, { field: 'Name' }, { field: 'PlaceOfBirth' } ]
+             *     });
+             * </script>
+             * @example Bootstrap <!-- bootstrap, grid.base, draggable.base -->
+             * <table id="grid"></table>
+             * <script>
+             *     var grid = $('#grid').grid({
+             *         dataSource: '/DataSources/GetPlayers',
+             *         resizableColumns: true,
+             *         uiLibrary: 'bootstrap',
              *         columns: [ { field: 'ID', width: 34 }, { field: 'Name' }, { field: 'PlaceOfBirth' } ]
              *     });
              * </script>
@@ -6485,22 +6500,26 @@ gj.grid.plugins.resizableColumns = {
 
     private: {
         init: function ($grid, config) {
-            var $columns, $column, i, $wrapper, $resizer;
-            $columns = $grid.find('thead tr th');
+            var $columns, $column, i, $wrapper, $resizer, marginRight;
+            $columns = $grid.find('thead tr[data-role="caption"] th');
             if ($columns.length) {
                 for (i = 0; i < $columns.length - 1; i++) {
                     $column = $($columns[i]);
-                    $wrapper = $('<div class="gj-grid-base-column-resizer-wrapper" />');
-                    $resizer = $('<span class="gj-grid-base-column-resizer" />');
+                    $wrapper = $('<div class="gj-grid-column-resizer-wrapper" />');
+                    marginRight = parseInt($column.css('padding-right'), 10) + 3;
+                    $resizer = $('<span class="gj-grid-column-resizer" />').css('margin-right', '-' + marginRight + 'px');
                     if ($.fn.draggable) {
                         $resizer.draggable({
                             start: function () {
-                                $grid.addClass('gj-grid-unselectable');
+                                $grid.addClass('gj-unselectable');
                                 $grid.addClass('gj-grid-resize-cursor');
                             },
                             stop: function () {
-                                $grid.removeClass('gj-grid-unselectable');
+                                $grid.removeClass('gj-unselectable');
                                 $grid.removeClass('gj-grid-resize-cursor');
+                                this.style.removeProperty('top');
+                                this.style.removeProperty('left');
+                                this.style.removeProperty('position');
                             },
                             drag: gj.grid.plugins.resizableColumns.private.createResizeHandle($grid, $column, config.columns[i])
                         });
@@ -6512,9 +6531,12 @@ gj.grid.plugins.resizableColumns = {
 
         createResizeHandle: function ($grid, $column, column) {
             return function (e, offset) {
-                var newWidth = $column.width() + offset.left + parseInt($column.css('paddingLeft').replace('px', ''), 10);
-                column.width = newWidth;
-                $column.width(newWidth);
+                var newWidth;
+                if (offset && offset.left) {
+                    newWidth = parseInt($column.attr('width'), 10) + offset.left;
+                    column.width = newWidth;
+                    $column.attr('width', newWidth);
+                }
             };
         }
     },
@@ -7183,6 +7205,39 @@ gj.tree.config = {
          */
         childrenField: 'children',
 
+        /** Icon field name.
+         * @type string
+         * @default undefined
+         * @example Bootstrap <!-- bootstrap, tree.base -->
+         * <div id="tree"></div>
+         * <script>
+         *     var tree = $('#tree').tree({
+         *         iconField: 'icon',
+         *         uiLibrary: 'bootstrap',
+         *         dataSource: [ { text: 'folder', icon: 'glyphicon glyphicon-folder-close', children: [ { text: 'file', icon: 'glyphicon glyphicon-file' } ] } ]
+         *     });
+         * </script>
+         * @example Font.Awesome <!-- tree.base  -->
+         * <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+         * <div id="tree"></div>
+         * <script>
+         *     var tree = $('#tree').tree({
+         *         iconField: 'icon',
+         *         dataSource: [ { text: 'folder', icon: 'fa fa-folder', children: [ { text: 'file', icon: 'fa fa-file' } ] } ]
+         *     });
+         * </script>
+         * @example Material.Design <!-- materialdesign, tree.base -->
+         * <div id="tree"></div>
+         * <script>
+         *     var tree = $('#tree').tree({
+         *         iconField: 'icon',
+         *         uiLibrary: 'materialdesign',
+         *         dataSource: [ { text: 'folder', icon: '<i class="material-icons">folder</i>', children: [ { text: 'file', icon: '<i class="material-icons">insert_drive_file</i>' } ] } ]
+         *     });
+         * </script>
+         */
+        iconField: undefined,
+
         /** Width of the tree.
          * @type number
          * @default undefined
@@ -7239,12 +7294,11 @@ gj.tree.config = {
         autoGenId: 1,
 
         style: {
-            wrapper: 'gj-tree-unselectable',
+            wrapper: 'gj-unselectable',
             list: 'gj-tree-list',
             item: 'gj-tree-item',
             active: 'gj-tree-base-active',
             leftSpacer: undefined,
-            expander: 'gj-tree-expander',
             display: 'gj-tree-display',
             expandIcon: undefined,
             collapseIcon: undefined,
@@ -7254,15 +7308,14 @@ gj.tree.config = {
 
     bootstrap: {
         style: {
-            wrapper: 'gj-tree-unselectable',
+            wrapper: 'gj-unselectable',
             list: 'gj-tree-bootstrap-list list-group',
             item: 'gj-tree-bootstrap-item list-group-item',
             active: 'active',
             leftSpacer: 'gj-tree-bootstrap-left-spacer',
-            expander: 'gj-tree-bootstrap-expander glyphicon',
             display: 'gj-tree-bootstrap-display',
-            expandIcon: 'glyphicon-plus',
-            collapseIcon: 'glyphicon-minus',
+            expandIcon: 'glyphicon glyphicon-plus',
+            collapseIcon: 'glyphicon glyphicon-minus',
             leafIcon: undefined
         }
     },
@@ -7271,15 +7324,14 @@ gj.tree.config = {
 
     materialdesign: {
         style: {
-            wrapper: 'gj-tree-unselectable',
+            wrapper: 'gj-unselectable',
             list: 'gj-tree-mdl-list mdl-list',
             item: 'gj-tree-mdl-item mdl-list__item',
             active: 'gj-tree-mdl-active',
             leftSpacer: '',
-            expander: 'material-icons gj-font-size-16 gj-cursor-pointer',
-            display: 'gj-tree-mdl-display mdl-list__item-primary-content',
-            expandIcon: 'gj-tree-mdl-icon-plus',
-            collapseIcon: 'gj-tree-mdl-icon-minus',
+            display: 'mdl-list__item-primary-content',
+            expandIcon: 'material-icons mdl-list__item-icon gj-cursor-pointer gj-tree-mdl-icon-plus',
+            collapseIcon: 'material-icons mdl-list__item-icon gj-cursor-pointer gj-tree-mdl-icon-minus',
             leafIcon: undefined
         }
     }
@@ -7536,8 +7588,16 @@ gj.tree.methods = {
             }
         }
 
-        $expander.addClass(data.style.expander).on('click', gj.tree.methods.expanderClickHandler($tree));
+        $expander.on('click', gj.tree.methods.expanderClickHandler($tree));
         $node.append($expander);
+
+        if (data.iconField && nodeData.data[data.iconField]) {
+            if (nodeData.data[data.iconField].indexOf('<') === 0) {
+                $node.append(nodeData.data[data.iconField]);
+            } else {
+                $node.append('<span data-role="icon" class="' + nodeData.data[data.iconField] + '"></span>');
+            }
+        }
 
         $display.addClass(data.style.display).on('click', gj.tree.methods.displayClickHandler($tree));
         $node.append($display);
